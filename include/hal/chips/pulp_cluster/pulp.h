@@ -26,7 +26,6 @@
 #endif // __ibex__
 #include "hal/eu/eu_v3.h"
 #include "hal/itc/itc_v1.h"
-#include "hal/dma/mchan_v7.h"
 #include "hal/timer/timer_v2.h"
 #include "hal/soc_eu/soc_eu_v2.h"
 #include "hal/cluster_ctrl/cluster_ctrl_v2.h"
@@ -44,5 +43,9 @@
 #include "hal/hmr/hmr_v1.h"
 #include "hal/tcdm_scrubber/tcdm_scrubber.h"
 #include "hal/hwpe_hci_ecc/hwpe_hci_ecc.h"
+
+// #include "hal/dma/mchan_v7.h"
+
+#include "hal/dma/idma_v2.h"
 
 #endif
