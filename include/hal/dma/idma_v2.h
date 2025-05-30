@@ -43,12 +43,11 @@ typedef unsigned int dma_ext_t;
 #define IDMA_DEFAULT_CONFIG_L2TOL1 (IDMA_DEFAULT_CONFIG | (IDMA_PROT_AXI << IDMA_REG32_3D_CONF_SRC_PROTOCOL_OFFSET) | (IDMA_PROT_OBI << IDMA_REG32_3D_CONF_DST_PROTOCOL_OFFSET))
 #define IDMA_DEFAULT_CONFIG_L1TOL1 (IDMA_DEFAULT_CONFIG | (IDMA_PROT_OBI << IDMA_REG32_3D_CONF_SRC_PROTOCOL_OFFSET) | (IDMA_PROT_OBI << IDMA_REG32_3D_CONF_DST_PROTOCOL_OFFSET))
 
-// TODO: check if DEFAULT_CONFIG is the same as configuring the enable_nd at the end of the define lines
 #define IDMA_DEFAULT_CONFIG_2D 0x400
 #define IDMA_DEFAULT_CONFIG_L1TOL2_2D (IDMA_DEFAULT_CONFIG_2D | (IDMA_PROT_OBI << IDMA_REG32_3D_CONF_SRC_PROTOCOL_OFFSET) | (IDMA_PROT_AXI << IDMA_REG32_3D_CONF_DST_PROTOCOL_OFFSET))
 #define IDMA_DEFAULT_CONFIG_L2TOL1_2D (IDMA_DEFAULT_CONFIG_2D | (IDMA_PROT_AXI << IDMA_REG32_3D_CONF_SRC_PROTOCOL_OFFSET) | (IDMA_PROT_OBI << IDMA_REG32_3D_CONF_DST_PROTOCOL_OFFSET))
 #define IDMA_DEFAULT_CONFIG_L1TOL1_2D (IDMA_DEFAULT_CONFIG_2D | (IDMA_PROT_OBI << IDMA_REG32_3D_CONF_SRC_PROTOCOL_OFFSET) | (IDMA_PROT_OBI << IDMA_REG32_3D_CONF_DST_PROTOCOL_OFFSET))
-// TODO: check if DEFAULT_CONFIG is the same as configuring the enable_nd at the end of the define lines
+
 #define IDMA_DEFAULT_CONFIG_3D 0x800
 #define IDMA_DEFAULT_CONFIG_L1TOL2_3D (IDMA_DEFAULT_CONFIG_3D | (IDMA_PROT_OBI << IDMA_REG32_3D_CONF_SRC_PROTOCOL_OFFSET) | (IDMA_PROT_AXI << IDMA_REG32_3D_CONF_DST_PROTOCOL_OFFSET))
 #define IDMA_DEFAULT_CONFIG_L2TOL1_3D (IDMA_DEFAULT_CONFIG_3D | (IDMA_PROT_AXI << IDMA_REG32_3D_CONF_SRC_PROTOCOL_OFFSET) | (IDMA_PROT_OBI << IDMA_REG32_3D_CONF_DST_PROTOCOL_OFFSET))
@@ -558,11 +557,30 @@ static inline unsigned int pulp_cl_idma_tx_cplt(unsigned int dma_tx_id) {
     return ((done_id & (IDMA_ID_MASK - (1<<(IDMA_ID_COUNTER_WIDTH-1))) < (1<<(IDMA_ID_COUNTER_WIDTH-2))));
   }
 }
+static inline unsigned int pulp_cl_idma_tx_cplt_toL2(unsigned int dma_tx_id) {
+  unsigned int done_id = DMA_CL_READ(IDMA_REG32_3D_DONE_ID_0_REG_OFFSET);
+  unsigned int my_id = dma_tx_id & IDMA_ID_MASK;
+  if (done_id >> (IDMA_ID_COUNTER_WIDTH-1) == my_id >> (IDMA_ID_COUNTER_WIDTH-1)) {
+    return my_id <= done_id;
+  } else {
+    return ((done_id & (IDMA_ID_MASK - (1<<(IDMA_ID_COUNTER_WIDTH-1))) < (1<<(IDMA_ID_COUNTER_WIDTH-2))));
+  }
+}
+static inline unsigned int pulp_cl_idma_tx_cplt_toL1(unsigned int dma_tx_id) {
+  unsigned int done_id = DMA_CL_READ(IDMA_REG32_3D_DONE_ID_1_REG_OFFSET);
+  unsigned int my_id = dma_tx_id & IDMA_ID_MASK;
+  if (done_id >> (IDMA_ID_COUNTER_WIDTH-1) == my_id >> (IDMA_ID_COUNTER_WIDTH-1)) {
+    return my_id <= done_id;
+  } else {
+    return ((done_id & (IDMA_ID_MASK - (1<<(IDMA_ID_COUNTER_WIDTH-1))) < (1<<(IDMA_ID_COUNTER_WIDTH-2))));
+  }
+}
 
 
 static inline unsigned int plp_dma_status() {
   return DMA_READ(IDMA_REG32_3D_STATUS_0_REG_OFFSET);
 }
+
 static inline unsigned int plp_cl_dma_status() {
   return DMA_CL_READ(IDMA_REG32_3D_STATUS_0_REG_OFFSET);
 }
@@ -573,8 +591,23 @@ static inline void plp_dma_wait(unsigned int dma_tx_id) {
   }
   return;
 }
+
 static inline void plp_cl_dma_wait(unsigned int dma_tx_id) {
   while(!pulp_cl_idma_tx_cplt(dma_tx_id)) {
+    eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
+  }
+  return;
+}
+
+static inline void plp_cl_dma_wait_toL1(unsigned int dma_tx_id) {
+  while(!pulp_cl_idma_tx_cplt_toL1(dma_tx_id)) {
+    eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
+  }
+  return;
+}
+
+static inline void plp_cl_dma_wait_toL2(unsigned int dma_tx_id) {
+  while(!pulp_cl_idma_tx_cplt_toL2(dma_tx_id)) {
     eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
   }
   return;
@@ -719,6 +752,7 @@ static inline int pulp_idma_memcpy_2d(unsigned int src, unsigned int dst, unsign
       dma_tx_id = DMA_READ(IDMA_REG32_3D_NEXT_ID_1_REG_OFFSET);
     return dma_tx_id;
 }
+
 static inline int pulp_cl_idma_memcpy_2d(unsigned int src, unsigned int dst, unsigned int size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps, idma_prot_t src_prot, idma_prot_t dst_prot) {
   unsigned int dma_tx_id;
   unsigned int cfg = IDMA_DEFAULT_CONFIG_2D;
@@ -802,7 +836,6 @@ static inline int pulp_cl_idma_L2ToL1_2d(unsigned int src, unsigned int dst, uns
   return dma_tx_id;
 }
 
-
 static inline int pulp_idma_L1ToL1_2d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps) {
   unsigned int dma_tx_id;
   unsigned int cfg = IDMA_DEFAULT_CONFIG_L1TOL1_2D;
@@ -818,6 +851,7 @@ static inline int pulp_idma_L1ToL1_2d(unsigned int src, unsigned int dst, unsign
   dma_tx_id = DMA_READ(IDMA_REG32_3D_NEXT_ID_1_REG_OFFSET);
   return dma_tx_id;
 }
+
 static inline int pulp_cl_idma_L1ToL1_2d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps) {
   unsigned int dma_tx_id;
   unsigned int cfg = IDMA_DEFAULT_CONFIG_L1TOL1_2D;
@@ -943,6 +977,7 @@ static inline int pulp_idma_zeromem(unsigned int dst, unsigned short size, idma_
   asm volatile("" : : : "memory");
   return dma_tx_id;
 }
+
 static inline int pulp_cl_idma_zeromem(unsigned int dst, unsigned short size, idma_prot_t dst_prot) {
   unsigned int dma_tx_id;
   unsigned int cfg = IDMA_DEFAULT_CONFIG;
