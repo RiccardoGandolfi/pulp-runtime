@@ -253,6 +253,23 @@ static inline int pulp_cl_idma_L1ToL2_2d(unsigned int src, unsigned int dst, uns
 static inline int pulp_idma_L2ToL1_2d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps);
 static inline int pulp_cl_idma_L2ToL1_2d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps);
 
+/** Intra-cluster memory 2-dimensional transfer with event-based completion.
+ *
+  \param   src    Address in the cluster memory where to store the data. There is no restriction on memory alignment.
+  \param   dst    Address in the cluster memory where to load the data. There is no restriction on memory alignment.
+  \param   size   Number of bytes to be transfered. The only restriction is that this size must fit 16 bits, i.e. must be inferior to 65536.
+  \param   src_stride 2D stride, which is the number of bytes which are added to the beginning of the current line to switch to the next one. Must fit 16 bits, i.e. must be inferior to 65536.
+  \param   dst_stride 2D stride, which is the number of bytes which are added to the beginning of the current line to switch to the next one. Must fit 16 bits, i.e. must be inferior to 65536.
+  \param   num_reps   Number of 1D transfers that comprise the 2D transfer.
+
+  \return         The identifier of the transfer. This can be used with plp_dma_wait to wait for the completion of this transfer.
+  */
+
+static inline int pulp_idma_L1ToL1_2d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps);
+static inline int pulp_idma_cl_L1ToL1_2d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps);
+
+
+
 /** Cluster memory to external memory 3-dimensional transfer with event-based completion.
  *
   \param   src            Address in the external memory where to store the data. There is no restriction on memory alignment.
@@ -290,6 +307,22 @@ static inline int pulp_cl_idma_L2ToL1_2d(unsigned int src, unsigned int dst, uns
  static inline int pulp_idma_L2ToL1_3d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps, unsigned int src_stride_3d, unsigned int dst_stride_3d, unsigned int num_reps_3d);
  static inline int pulp_cl_idma_L2ToL1_3d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps, unsigned int src_stride_3d, unsigned int dst_stride_3d, unsigned int num_reps_3d);
 
+ /** Intra-cluster memory 3-dimensional transfer with event-based completion.
+  *
+   \param   src           Address in the external memory where to store the data. There is no restriction on memory alignment.
+   \param   dst           Address in the cluster memory where to load the data. There is no restriction on memory alignment.
+   \param   size          Number of bytes to be transfered. The only restriction is that this size must fit 16 bits, i.e. must be inferior to 65536.
+   \param   src_stride    2D stride, which is the number of bytes which are added to the beginning of the current line to switch to the next one. Must fit 16 bits, i.e. must be inferior to 65536.
+   \param   dst_stride    2D stride, which is the number of bytes which are added to the beginning of the current line to switch to the next one. Must fit 16 bits, i.e. must be inferior to 65536.
+   \param   num_reps      Number of 1D transfers that comprise the 2D transfer.
+   \param   src_stride_3d Stride between 2D pages in the source memory.
+   \param   dst_stride_3d Stride between 2D pages in the destination memory.
+   \param   num_reps_3d   Number of 2D pages to be transfered.
+
+   \return         The identifier of the transfer. This can be used with plp_dma_wait to wait for the completion of this transfer.
+   */
+
+ static inline int pulp_idma_L1ToL1_3d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps_2d, unsigned int src_stride_3d, unsigned int dst_stride_3d, unsigned int num_reps_3d);
  static inline int pulp_cl_idma_L1ToL1_3d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps_2d, unsigned int src_stride_3d, unsigned int dst_stride_3d, unsigned int num_reps_3d);
 
 
@@ -308,9 +341,26 @@ static inline int pulp_cl_idma_zeromem(unsigned int dst, unsigned short size, id
 
 /** DMA barrier.
  * This blocks the core until no transfer is on-going in the DMA.
+ * Careful: these only wait for transfers towards L2
  */
 static inline void plp_dma_barrier();
 static inline void plp_cl_dma_barrier();
+
+/** DMA barrier.
+ * This blocks the core until no transfer is on-going in the DMA.
+ * Careful: these only wait for transfers towards L1
+ */
+
+static inline void plp_dma_barrier_toL1();
+static inline void plp_cl_dma_barrier_toL1();
+
+/** DMA barrier.
+ * This blocks the core until no transfer is on-going in the DMA.
+ * Careful: these only wait for transfers towards L2
+ */
+
+static inline void plp_dma_barrier_toL2();
+static inline void plp_cl_dma_barrier_toL2();
 
 /** DMA wait.
   * This blocks the core until the specified transfer is finished.
@@ -319,6 +369,8 @@ static inline void plp_cl_dma_barrier();
  */
 static inline void plp_dma_wait(unsigned int dma_tx_id);
 static inline void plp_cl_dma_wait(unsigned int dma_tx_id);
+static inline void plp_cl_dma_wait_toL1(unsigned int dma_tx_id);
+static inline void plp_cl_dma_wait_toL2(unsigned int dma_tx_id);
 //!@}
 
 
@@ -408,6 +460,22 @@ static inline unsigned int pulp_cl_idma_tx_cplt(unsigned int dma_tx_id);
   */
 static inline unsigned int plp_dma_status();
 static inline unsigned int plp_cl_dma_status();
+
+/** Return the DMA status for a transfer towards L1 memory.
+ *
+  \return             DMA status. 1 means there are still on-going transfers, 0 means nothing is on-going.
+  */
+
+static inline unsigned int plp_dma_status_toL1();
+static inline unsigned int plp_cl_dma_status_toL1();
+
+/** Return the DMA status for a transfer towards L2 memory.
+ *
+  \return             DMA status. 1 means there are still on-going transfers, 0 means nothing is on-going.
+  */
+
+static inline unsigned int plp_dma_status_toL2();
+static inline unsigned int plp_cl_dma_status_toL2();
 
 
 //!@}
@@ -581,7 +649,23 @@ static inline unsigned int plp_dma_status() {
   return DMA_READ(IDMA_REG32_3D_STATUS_0_REG_OFFSET);
 }
 
+static inline unsigned int plp_dma_status_toL1() {
+  return DMA_READ(IDMA_REG32_3D_STATUS_1_REG_OFFSET);
+}
+
+static inline unsigned int plp_dma_status_toL2() {
+  return DMA_READ(IDMA_REG32_3D_STATUS_0_REG_OFFSET);
+}
+
 static inline unsigned int plp_cl_dma_status() {
+  return DMA_CL_READ(IDMA_REG32_3D_STATUS_0_REG_OFFSET);
+}
+
+static inline unsigned int plp_cl_dma_status_toL1() {
+  return DMA_CL_READ(IDMA_REG32_3D_STATUS_1_REG_OFFSET);
+}
+
+static inline unsigned int plp_cl_dma_status_toL2() {
   return DMA_CL_READ(IDMA_REG32_3D_STATUS_0_REG_OFFSET);
 }
 
@@ -944,6 +1028,25 @@ static inline int pulp_cl_idma_L2ToL1_3d(unsigned int src, unsigned int dst, uns
   return dma_tx_id;
 }
 
+static inline int pulp_idma_L1ToL1_3d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps_2d, unsigned int src_stride_3d, unsigned int dst_stride_3d, unsigned int num_reps_3d) {
+  unsigned int dma_tx_id;
+  unsigned int cfg = IDMA_DEFAULT_CONFIG_L1TOL1_3D;
+  DMA_WRITE(src, IDMA_REG32_3D_SRC_ADDR_LOW_REG_OFFSET);
+  DMA_WRITE(dst, IDMA_REG32_3D_DST_ADDR_LOW_REG_OFFSET);
+  DMA_WRITE(size, IDMA_REG32_3D_LENGTH_LOW_REG_OFFSET);
+  DMA_WRITE(cfg, IDMA_REG32_3D_CONF_REG_OFFSET);
+  DMA_WRITE(src_stride, IDMA_REG32_3D_SRC_STRIDE_2_LOW_REG_OFFSET);
+  DMA_WRITE(dst_stride, IDMA_REG32_3D_DST_STRIDE_2_LOW_REG_OFFSET);
+  DMA_WRITE(src_stride_3d, IDMA_REG32_3D_SRC_STRIDE_3_LOW_REG_OFFSET);
+  DMA_WRITE(dst_stride_3d, IDMA_REG32_3D_DST_STRIDE_3_LOW_REG_OFFSET);
+  DMA_WRITE(num_reps_2d, IDMA_REG32_3D_REPS_2_LOW_REG_OFFSET);
+  DMA_WRITE(num_reps_3d, IDMA_REG32_3D_REPS_3_LOW_REG_OFFSET);
+
+  asm volatile("" : : : "memory");
+  dma_tx_id = DMA_READ(IDMA_REG32_3D_NEXT_ID_1_REG_OFFSET);
+  return dma_tx_id;
+}
+
 static inline int pulp_cl_idma_L1ToL1_3d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps_2d, unsigned int src_stride_3d, unsigned int dst_stride_3d, unsigned int num_reps_3d) {
   unsigned int dma_tx_id;
   unsigned int cfg = IDMA_DEFAULT_CONFIG_L1TOL1_3D;
@@ -1001,6 +1104,28 @@ static inline void plp_dma_barrier() {
 }
 static inline void plp_cl_dma_barrier() {
   while(plp_cl_dma_status()) {
+    eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
+  }
+}
+
+static inline void plp_dma_barrier_toL1() {
+  while(plp_dma_status_toL1()) {
+    eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
+  }
+}
+static inline void plp_cl_dma_barrier_toL1() {
+  while(plp_cl_dma_status_toL1()) {
+    eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
+  }
+}
+
+static inline void plp_dma_barrier_toL2() {
+  while(plp_dma_status_toL2()) {
+    eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
+  }
+}
+static inline void plp_cl_dma_barrier_toL2() {
+  while(plp_cl_dma_status_toL2()) {
     eu_evt_maskWaitAndClr(1 << IDMA_EVENT);
   }
 }
