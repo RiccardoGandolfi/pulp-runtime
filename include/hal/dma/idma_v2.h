@@ -266,7 +266,7 @@ static inline int pulp_cl_idma_L2ToL1_2d(unsigned int src, unsigned int dst, uns
   */
 
 static inline int pulp_idma_L1ToL1_2d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps);
-static inline int pulp_idma_cl_L1ToL1_2d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps);
+static inline int pulp_cl_idma_L1ToL1_2d(unsigned int src, unsigned int dst, unsigned short size, unsigned int src_stride, unsigned int dst_stride, unsigned int num_reps);
 
 
 
