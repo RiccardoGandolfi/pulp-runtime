@@ -91,7 +91,7 @@
 #define ARCHI_CLUSTER_NB_PE 8
 #endif
 #define ARCHI_NB_CLUSTER    1
-
+#define ARCHI_HAS_DMA_DEMUX 1
 
 /*
  * HWS
