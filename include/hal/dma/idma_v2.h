@@ -602,7 +602,7 @@ static inline unsigned int pulp_idma_get_conf(unsigned int decouple_aw, unsigned
   conf = __builtin_bitinsert(conf, dst_prot,     3, IDMA_REG32_3D_CONF_DST_PROTOCOL_OFFSET);
   // TODO: add burst length reduction
 #else
-  conf = (((decouple_rw & 0x1)<<IDMA_REG32_3D_CONF_DECOUPLE_RW_BIT) | ((decouple_aw & 0x1)<<IDMA_REG32_3D_CONF_DECOUPLE_AW_BIT) | ((n_d & 0x3)<<IDMA_REG32_3D_CONF_ND_OFFSET) | ((src_prot & 0x7)<<IDMA_3D_CONF_SRC_PROTOCOL_OFFSET) | ((dst_prot & 0x7)<<IDMA_3D_CONF_DST_PROTOCOL_OFFSET));
+  conf = (((decouple_rw & 0x1)<<IDMA_REG32_3D_CONF_DECOUPLE_RW_BIT) | ((decouple_aw & 0x1)<<IDMA_REG32_3D_CONF_DECOUPLE_AW_BIT) | ((n_d & 0x3)<<IDMA_REG32_3D_CONF_ENABLE_ND_OFFSET) | ((src_prot & 0x7)<<IDMA_REG32_3D_CONF_SRC_PROTOCOL_OFFSET) | ((dst_prot & 0x7)<<IDMA_REG32_3D_CONF_DST_PROTOCOL_OFFSET));
 #endif
   return conf;
 }
