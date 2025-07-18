@@ -13,9 +13,9 @@ PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imcxgap9 -mnohwloop
 else
 PULP_LDFLAGS      += 
 PULP_CFLAGS       +=  -D__riscv__
-PULP_ARCH_CFLAGS ?=  -march=rv32imxgap9
-PULP_ARCH_LDFLAGS ?=  -march=rv32imxgap9
-PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imxgap9
+PULP_ARCH_CFLAGS ?=  -march=rv32imcxgap9
+PULP_ARCH_LDFLAGS ?=  -march=rv32imcxgap9
+PULP_ARCH_OBJDFLAGS ?= -Mmarch=rv32imcxgap9
 endif
 
 PULP_CFLAGS    += -fdata-sections -ffunction-sections -include chips/pulp/config.h -I$(PULPRT_HOME)/include/chips/pulp

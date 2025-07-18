@@ -89,7 +89,7 @@ void cluster_start(int cid, int (*entry)())
     alloc_init_l1(cid);
 
     // Activate icache ---> TEMPORARY: UNTIL WE DECIDE WHICH ICACHE TO USE
-    // hal_icache_cluster_enable(cid);
+    hal_icache_cluster_enable(cid);
 
     #ifndef ARCHI_NO_FC
     if (!hal_is_fc())
